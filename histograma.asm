@@ -37,7 +37,9 @@ main:
     
     # Índice i = 0
     li t0, 0
-    li t1, 10              # N = 10
+    li t1, 10              # N = 10 (número de elementos del arreglo)
+                          # En C se calcula con: sizeof(edades) / sizeof(edades[0])
+                          # En assembly hardcodeamos porque no hay preprocesador
     
 ciclo:
     # Verificar condición: if (i >= N) salir

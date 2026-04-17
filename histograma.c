@@ -9,8 +9,12 @@
 
 #include <stdio.h>
 
-// Arreglo de edades
+// Arreglo de edades (10 elementos)
 int edades[] = {12, 25, 70, 17, 45, 8, 66, 30, 15, 99};
+
+// N = número de elementos del arreglo
+// Se calcula automáticamente: sizeof(edades) / sizeof(edades[0])
+// Equivale a: 40 bytes / 4 bytes = 10 elementos
 #define N (sizeof(edades) / sizeof(edades[0]))
 
 int main()

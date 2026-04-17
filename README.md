@@ -270,7 +270,7 @@ li t1, 10
 **En términos de C:**
 ```c
 int i = 0;
-int N = 10;
+int N = 10;  // En C se calcula automáticamente con sizeof(edades)/sizeof(edades[0])
 ```
 
 ---
@@ -354,7 +354,7 @@ s3 = &contador_mayores;    // la s3, contador_mayores
 *s3 = 0;
 
 i = 0;                    // li t0, 0
-N = 10;                   // li t1, 10
+N = 10;                   // li t1, 10 (en C: sizeof(edades)/sizeof(edades[0]))
 
 // CICLO PRINCIPAL
 while (i < N) {
@@ -390,7 +390,7 @@ while (i < N) {
 | 2    | `la s1, ...`   | s1 = 0x10000028                |
 | 3    | `sw zero, 0(s1)` | contador_menores = 0            |
 | 4    | `li t0, 0`     | t0 = 0 (i = 0)                 |
-| 5    | `li t1, 10`    | t1 = 10 (N = 10)               |
+| 5    | `li t1, 10`    | t1 = 10 (N = número de elementos, se calcula en C con sizeof)
 | 6    | `bge t0, t1, fin`| 0 >= 10? NO → continuar          |
 | 7    | `slli t2, t0, 2`| t2 = 0 × 4 = 0 (offset)         |
 | 8    | `add t2, s0, t2`| t2 = 0x10000000 + 0             |
