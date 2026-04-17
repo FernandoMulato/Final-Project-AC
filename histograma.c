@@ -1,7 +1,7 @@
 /**
  * HISTOGRAMA - Clasificador de Edades
  * ==================================
- * Clasifica idades en 3 categorías:
+ * Clasifica edades en 3 categorías:
  * - Menores: < 18 años
  * - Adultos: 18-65 años
  * - Mayores: > 65 años
@@ -38,13 +38,6 @@ int main()
       contador_mayores++;
     }
   }
-
-  // Imprimir resultados
-  printf("=== RESULTADOS ===\n");
-  printf("Menores (< 18): %d\n", contador_menores);
-  printf("Adultos (18-65): %d\n", contador_adultos);
-  printf("Mayores (> 65): %d\n", contador_mayores);
-  printf("Total: %d\n", contador_menores + contador_adultos + contador_mayores);
 
   return 0;
 }

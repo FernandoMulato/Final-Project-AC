@@ -18,17 +18,6 @@ contador_adultos:
 contador_mayores:
     .word 0
 
-msg_menores:
-    .asciiz "Menores (< 18): "
-msg_adultos:
-    .asciiz "Adultos (18-65): "
-msg_mayores:
-    .asciiz "Mayores (> 65): "
-msg_total:
-    .asciiz "Total: "
-nl:
-    .asciiz "\n"
-
 .text
 .globl main
 
@@ -97,49 +86,6 @@ continuar:
     j ciclo
     
 fin_ciclo:
-    # ----------------------------------------------------------------
-    # IMPRIMIR RESULTADOS
-    # ----------------------------------------------------------------
-    
-    # "Menores (< 18): "
-    la a0, msg_menores
-    li a7, 4
-    ecall
-    
-    lw a0, 0(s1)          # valor contador
-    li a7, 1
-    ecall
-    
-    la a0, nl
-    li a7, 4
-    ecall
-    
-    # "Adultos (18-65): "
-    la a0, msg_adultos
-    li a7, 4
-    ecall
-    
-    lw a0, 0(s2)
-    li a7, 1
-    ecall
-    
-    la a0, nl
-    li a7, 4
-    ecall
-    
-    # "Mayores (> 65): "
-    la a0, msg_mayores
-    li a7, 4
-    ecall
-    
-    lw a0, 0(s3)
-    li a7, 1
-    ecall
-    
-    la a0, nl
-    li a7, 4
-    ecall
-    
-    # Exit
+    # Fin del programa
     li a7, 10
     ecall

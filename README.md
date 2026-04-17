@@ -26,10 +26,6 @@
 │ 0x10000028   │ contador = 4            │ Menores (<18)     │
 │ 0x1000002C   │ contador = 3            │ Adultos (18-65) │
 │ 0x10000030   │ contador = 3            │ Mayores (>65)   │
-├───────────────┼──────────────────────┼─────────────────────┤
-│ Strings       │ "Menores (<18): "      │ Mensajes output   │
-│               │ "Adultos (18-65): "    │                   │
-│               │ "Mayores (>65): "      │                   │
 └───────────────┴──────────────────────┴─────────────────────┘
 
 NOTA: Cada .word = 4 bytes → las direcciones aumentan de 4 en 4
@@ -50,7 +46,6 @@ Las directivas NO son instrucciones del procesador. Son ÓRDENES para el ensambl
 **Para qué sirve:** Define el espacio en memoria donde vamos a guardar:
 - El arreglo de edades
 - Los contadores
-- Los strings para imprimir
 
 ---
 
@@ -80,23 +75,7 @@ edades:
 
 ---
 
-### 2.4 Directiva .asciiz
-```asm
-msg_menores:
-    .asciiz "Menores (< 18): "
-```
-**Qué hace:** Guarda una cadena de texto en memoria.
-
-**Características:**
-- `.asciiz` = ASCII + Zero (termina en null)
-- El carácter null (`\0`) se agrega automáticamente al final
-- Necesitamos esto para imprimir con syscall 4
-
-**Analogía en C:** Es como `const char* msg = "Menores (< 18): "` en C.
-
----
-
-### 2.5 Directiva .globl
+### 2.4 Directiva .globl
 ```asm
 .globl main
 ```
@@ -296,45 +275,29 @@ int N = 10;
 
 ---
 
-## 4. Llamadas al Sistema (Syscalls)
-
-### 4.1 Qué son los syscalls
-
-Los `ecall` son llamadas al sistema operativo. En RARS, usamos syscalls para:
-- Imprimir texto
-- Imprimir números
-- Leer entrada
-- Terminar el programa
-
-### 4.2 Tabla de syscalls útiles
-
-| a7 (código) | Descripción        | a0 (argumento)                |
-|-------------|-------------------|-------------------------------|
-| 1           | Imprimir entero   | El número a imprimir         |
-| 4           | Imprimir string  | Dirección del string         |
-| 10          | Terminar programa | -                             |
-| 5           | Leer entero       | - (retorna valor en a0)      |
-| 8           | Leer string       | Buffer + longitud máx       |
-
-### 4.3 Ejemplo de impresión
+### 3.10 Terminar programa - ecall
 
 ```asm
-# Imprimir "Menores (< 18): "
-la a0, msg_menores     # a0 = dirección del string
-li a7, 4              # a7 = 4 → print string
-ecall                  # ejecutar
+li a7, 10
+ecall
+```
 
-# Imprimir el número
-lw a0, 0(s1)           # a0 = valor del contador
-li a7, 1              # a7 = 1 → print int
-ecall                  # ejecutar
+**Qué hace:** Llama al sistema operativo para terminar el programa.
+
+**Desglose:**
+- `a7` = 10 indica "exit"
+- `ecall` ejecuta la llamada al sistema
+
+**En términos de C:**
+```c
+return 0;  // terminar programa
 ```
 
 ---
 
-## 5. Registro de Convenciones (Qué registro usar para qué)
+## 4. Registro de Convenciones (Qué registro usar para qué)
 
-### 5.1 Registros temporales (t0-t6)
+### 4.1 Registros temporales (t0-t6)
 
 | Registro | Uso típico                     |
 |----------|------------------------------|
@@ -351,7 +314,7 @@ ecall                  # ejecutar
 
 ---
 
-### 5.2 Registros salvados (s0-s11)
+### 4.2 Registros salvados (s0-s11)
 
 | Registro | Uso típico                          |
 |----------|-----------------------------------|
@@ -366,7 +329,7 @@ ecall                  # ejecutar
 
 ---
 
-### 5.3 Registros de argumentos (a0-a7)
+### 4.3 Registros de argumentos (a0-a7)
 
 | Registro | Uso                                      |
 |----------|----------------------------------------|
@@ -375,9 +338,9 @@ ecall                  # ejecutar
 
 ---
 
-## 6. Flujo de Ejecución Completo
+## 5. Flujo de Ejecución Completo
 
-### 6.1 Pseudocódigo equivalente
+### 5.1 Pseudocódigo equivalente
 
 ```c
 // INICIALIZACIÓN
@@ -419,7 +382,7 @@ while (i < N) {
 
 ---
 
-### 6.2 Traza de ejecución (primera iteración)
+### 5.2 Traza de ejecución (primera iteración)
 
 | Paso | Instr            | Estado de registros / memoria            |
 |------|-----------------|----------------------------------|
@@ -442,9 +405,9 @@ while (i < N) {
 
 ---
 
-## 7. Dónde están los PROBLEMAS (Control Hazards)
+## 6. Dónde están los PROBLEMAS (Control Hazards)
 
-### 7.1 El problema arquitectónico
+### 6.1 El problema arquitectónico
 
 Cada `if/else` genera un salto condicional. En un procesador segmentado (pipeline), esto causa **control hazards**:
 
@@ -469,7 +432,7 @@ Cada `if/else` genera un salto condicional. En un procesador segmentado (pipelin
 └─────────────────────────────────────────────────────────┘
 ```
 
-### 7.2 Dónde están los branch en nuestro código
+### 6.2 Dónde están los branch en nuestro código
 
 ```asm
 # Este genera branch hazard:
@@ -484,7 +447,7 @@ bge t0, t1, fin_ciclo   # while (i < N) → salir si i >= N
 
 **Total:** 3 branches por cada iteración × 10 iteraciones = 30 branches
 
-### 7.3 Por qué esto es un problema
+### 6.3 Por qué esto es un problema
 
 El pipeline de 5 etapas:
 ```
@@ -497,11 +460,11 @@ IF → ID → EX → MEM → WB
 4. **MEM** (Memory): acceder a memoria
 5. **WB** (Write Back): escribir el resultado
 
-Cuando el procesador ve un **branch**, no sabe sitomar el salto hasta quela comparación termina en EX. Mientras tanto, no sabe qué instr traer después → debe insertar **NOPs** (burbujas).
+Cuando el procesador ve un **branch**, no sabe si tomar el salto hasta que la comparación termina en EX. Mientras tanto, no sabe qué instr traer después → debe insertar **NOPs** (burbujas).
 
 ---
 
-## 8. Preguntas de Sustentación y Respuestas
+## 7. Preguntas de Sustentación y Respuestas
 
 ### P1: ¿Por qué multiplicás por 4 con slli?
 
@@ -517,7 +480,7 @@ Cuando el procesador ve un **branch**, no sabe sitomar el salto hasta quela comp
 
 ### P3: ¿Qué es ecall y para qué sirve?
 
-> "ecall es una llamada al sistema operativo (syscall). En RARS se usa para interactuar con el exterior: imprimir texto (código 4), imprimir enteros (código 1), o terminar el programa (código 10)."
+> "ecall es una llamada al sistema operativo (syscall). En RARS se usa para terminar el programa (código 10)."
 
 ---
 
@@ -551,19 +514,13 @@ Cuando el procesador ve un **branch**, no sabe sitomar el salto hasta quela comp
 
 ---
 
-### P9: ¿Qué diferencia hay entre .word y .asciiz?
-
-> "`.word` guarda enteros de 32 bits (4 bytes cada uno). `.asciiz` guarda texto (strings) que terminan en null. Uno es para números, el otro para texto."
-
----
-
-### P10: ¿Qué hace la instrucción 'add'?
+### P9: ¿Qué hace la instrucción 'add'?
 
 > "La instrucción `add` suma dos registros y guarda el resultado. A diferencia de `addi` que suma una constante, `add` suma el valor de dos registros: `add t2, s0, t2` significa t2 = s0 + t2."
 
 ---
 
-## 9. Resumen Visual para la Sustentación
+## 8. Resumen Visual para la Sustentación
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -578,7 +535,7 @@ Cuando el procesador ve un **branch**, no sabe sitomar el salto hasta quela comp
 │  │ contr_:  │        │ ciclo:              │           │
 │  │ 3 words  │        │   lw t3, 0(t2)     │ ← cargar │
 │  │          │        │   bge t3, t4, ...   │ ← branch │
-│  │ strings  │        │   addi t5, t5, 1    │ ← aritm │
+│  │          │        │   addi t5, t5, 1    │ ← aritm │
 │  │          │        │   sw t5, 0(s1)       │ ← store  │
 │  └─────────────┘        └──────────────────────┘           │
 │       MEMORIA               PROCESADOR                       │
@@ -593,14 +550,13 @@ DATO CLAVE: El algoritmo tiene 3 branches por iteración
 
 ---
 
-## 10. Checklist de Sustentación
+## 9. Checklist de Sustentación
 
 Marca cada uno cuando lo puedas explicar:
 
 - [ ] Explicar qué hace `.data` y para qué sirve
 - [ ] Explicar qué hace `.text` y para qué sirve  
 - [ ] Explicar qué es `.word` y ejemplos de uso
-- [ ] Explicar qué es `.asciiz` y ejemplos de uso
 - [ ] Explicar para qué sirve `la` (load address)
 - [ ] Explicar para qué sirve `lw` (load word)
 - [ ] Explicar para qué sirve `sw` (store word)
@@ -610,11 +566,11 @@ Marca cada uno cuando lo puedas explicar:
 - [ ] Explicar dónde están los contadores en memoria
 - [ ] Explicar qué son los control hazards
 - [ ] Explicar por qué el CPI real > 1.0
-- [ ] Explicar qué hace `ecall` y los syscalls
+- [ ] Explicar qué hace `ecall` (exit)
 
 ---
 
-## 11. Glosario Rápido
+## 10. Glosario Rápido
 
 | Término | Significado |
 |---------|------------|
@@ -625,12 +581,11 @@ Marca cada uno cuando lo puedas explicar:
 | Branch | Salto condicional (if/else) |
 | Stall/Burbuja | Ciclo perdido esperando que algo termine |
 | CPI | Ciclos Por Instruccón |
-| Syscall | Llamada al sistema operativo |
 | Offset | Desplazamiento desde una dirección base |
 
 ---
 
-## 12. Más Recursos
+## 11. Más Recursos
 
 ### Documentación oficial:
 - RISC-Vspec: https://riscv.org/technical/specifications/
