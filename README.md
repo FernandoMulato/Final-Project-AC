@@ -595,3 +595,142 @@ Marca cada uno cuando lo puedas explicar:
 - Intentar dibujar el Data Segment completo
 - Hacer la traza a mano de las primeras 2 iteraciones
 - Explicar el código en voz alta como si fuera la sustentación
+
+--- 
+
+# Hazard de Control en un Pipeline de 5 Etapas (RISC-V)
+
+## 📌 Descripción del problema
+
+En un procesador RISC-V con pipeline de 5 etapas (IF, ID, EX, MEM, WB), se presenta un **hazard de control** cuando el flujo de ejecución del programa cambia debido a una instrucción de salto.
+
+En este caso específico, la instrucción problemática es:
+
+```
+jal x0, 40
+```
+
+Esta instrucción realiza un **salto incondicional**, modificando el valor del PC (Program Counter) hacia una nueva dirección de memoria.
+
+---
+
+## ⚙️ Funcionamiento del pipeline
+
+El pipeline tiene las siguientes etapas:
+
+1. **IF (Instruction Fetch)**: Se obtiene la instrucción desde memoria.
+2. **ID (Instruction Decode)**: Se decodifica la instrucción y se leen registros.
+3. **EX (Execute)**: Se ejecuta la operación (ALU o cálculo de salto).
+4. **MEM (Memory)**: Acceso a memoria (si aplica).
+5. **WB (Write Back)**: Escritura en registros.
+
+---
+
+## 🚨 ¿Por qué ocurre el hazard?
+
+El problema surge porque:
+
+- El procesador **no sabe inmediatamente** que debe hacer un salto.
+- Mientras el `jal` avanza en el pipeline, el procesador sigue trayendo instrucciones secuenciales.
+
+### Secuencia real:
+
+1. Se ejecuta una instrucción previa (por ejemplo `addi x5, x5, 1`).
+2. El pipeline continúa trayendo instrucciones siguientes de forma secuencial.
+3. La instrucción `jal` entra al pipeline.
+4. El salto **se resuelve en la etapa EX**.
+5. En ese momento, el procesador detecta que:
+   - Las instrucciones que ya están en IF e ID **no son válidas**.
+
+---
+
+## 🔥 Consecuencia: instrucciones incorrectas en el pipeline
+
+Antes de resolver el salto, el pipeline ya cargó instrucciones que:
+
+- No deberían ejecutarse.
+- Pertenecen a la ruta incorrecta del programa.
+
+---
+
+## 🧹 Solución: Flush del pipeline
+
+Para corregir esto, el procesador realiza un **flush (limpieza del pipeline)**:
+
+- Se eliminan las instrucciones incorrectas.
+- Se reemplazan por instrucciones vacías (**NOP - No Operation**).
+
+En el diagrama se observa:
+
+```
+nop (flush)
+nop (flush)
+```
+
+---
+
+## 📉 ¿Por qué aparecen 2 NOPs?
+
+Esto depende de en qué etapa se resuelve el salto.
+
+En este caso:
+
+- El `jal` se resuelve en **EX**.
+- Para ese momento:
+  - Hay una instrucción en **IF**
+  - Otra en **ID**
+
+Ambas deben eliminarse.
+
+Por eso:
+
+```
+Número de NOPs = número de etapas anteriores a EX = 2
+```
+
+---
+
+## 📊 Impacto en el rendimiento
+
+El flush introduce:
+
+- **Burbujas en el pipeline**
+- Pérdida de ciclos de reloj
+- Disminución del rendimiento
+
+Cada NOP representa un ciclo en el que el procesador no realiza trabajo útil.
+
+---
+
+## 🧠 Tipo de hazard
+
+Este problema se clasifica como:
+
+> **Control Hazard (hazard de control)**
+
+Porque está relacionado con el cambio del flujo de ejecución del programa.
+
+---
+
+## 🚀 Técnicas para mitigar este problema
+
+En arquitecturas más avanzadas, se utilizan:
+
+- **Predicción de saltos (Branch Prediction)**  
+  El procesador intenta adivinar si habrá salto.
+
+- **Resolución temprana del salto**  
+  Mover la lógica de decisión a etapas más tempranas.
+
+- **Delay Slots**  
+  Ejecutar instrucciones útiles mientras se resuelve el salto.
+
+---
+
+## 📌 Resumen final
+
+- El hazard ocurre por una instrucción de salto (`jal`).
+- El pipeline continúa ejecutando instrucciones incorrectas.
+- Al resolverse el salto, estas instrucciones se eliminan (flush).
+- Se insertan NOPs para limpiar el pipeline.
+- En este caso aparecen 2 NOPs porque el salto se resuelve en EX.
