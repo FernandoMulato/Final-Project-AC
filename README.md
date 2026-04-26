@@ -727,10 +727,76 @@ En arquitecturas más avanzadas, se utilizan:
 
 ---
 
-## 📌 Resumen final
+## 8. Cálculo del AMAT (Average Memory Access Time)
 
-- El hazard ocurre por una instrucción de salto (`jal`).
-- El pipeline continúa ejecutando instrucciones incorrectas.
-- Al resolverse el salto, estas instrucciones se eliminan (flush).
-- Se insertan NOPs para limpiar el pipeline.
+### Parámetros del procesador Intel Core i7-13ª generación:
+
+| Parámetro | Valor | Nota |
+|-----------|-------|------|
+| Tiempo de acierto L1 (Hit) | 4 ns | Mismo ciclo reloj a ~3-4 GHz |
+| Penalización por fallo L1 (L2) | 10 ns | Aproximado |
+| Penalización por fallo L2 → L3 | 40 ns | Aproximado |
+| Penalización por fallo L3 → RAM | 100 ns | Acceso a memoria principal |
+
+### Tabla de probabilidades de acceso (basado en programa típico):
+
+| Nivel de caché | Tasa de acierto (Hit Rate) | Penalización por fallo (ns) |
+|----------------|---------------------------|------------------------------|
+| L1 Data Cache  | 98% (0.98)               | 10 ns (L2)                   |
+| L2 Cache       | 95% (0.95)               | 40 ns (L3)                   |
+| L3 Cache       | 99% (0.99)               | 100 ns (RAM)                 |
+
+### Fórmula AMAT:
+
+AMAT = Hit_L1 × Tiempo_Hit_L1 + Miss_L1 × [Hit_L2 × (Tiempo_Hit_L1 + Penalización_L2) + Miss_L2 × [Hit_L3 × (Tiempo_Hit_L1 + Penalización_L2 + Penalización_L3) + Miss_L3 × (Tiempo_Hit_L1 + Penalización_L2 + Penalización_L3 + Penalización_RAM)]
+
+### Cálculo paso a paso:
+
+AMAT = 0.98 × 4 ns + 0.02 × [0.95 × (4 + 10) + 0.05 × [0.99 × (4 + 10 + 40) + 0.01 × (4 + 10 + 40 + 100)]
+
+AMAT = 3.92 ns + 0.02 × [0.95 × 14 + 0.05 × [0.99 × 54 + 0.01 × 154]]
+
+AMAT = 3.92 ns + 0.02 × [13.3 + 0.05 × [53.46 + 1.54]]
+
+AMAT = 3.92 ns + 0.02 × [13.3 + 2.75]
+
+AMAT = 3.92 ns + 0.321 ns
+
+AMAT ≈ 4.24 ns
+
+### Resultados de AMAT:
+
+| Escenario | AMAT | Explicación |
+|-----------|------|-------------|
+| Sin optimizar (muchos misses) | ~20-40 ns | Más accesos a RAM |
+| Con optimización | ~4.24 ns | Mayor acierto en caché |
+
+### Ganancia de rendimiento:
+
+Mejora = (40 ns - 4.24 ns) / 40 ns = 89.4%
+
+## 9. Checklist de Sustentación
+
+Marca cada uno cuando lo puedas explicar:
+
+- [x] Explicar qué hace `.data` y para qué sirve
+- [x] Explicar qué hace `.text` y para qué sirve  
+- [x] Explicar qué es `.word` y ejemplos de uso
+- [x] Explicar para qué sirve `la` (load address)
+- [x] Explicar para qué sirve `lw` (load word)
+- [x] Explicar para qué sirve `sw` (store word)
+- [x] Explicar por qué `slli` multiplica por 4
+- [x] Explicar las comparaciones: `bge`, `bgt`, `beq`, `bne`
+- [x] Explicar el flujo del ciclo completo
+- [x] Explicar dónde están los contadores en memoria
+- [x] Explicar qué son los control hazards
+- [x] Explicar por qué el CPI real > 1.0
+- [x] Explicar qué hace `ecall` (exit)
+
+---
 - En este caso aparecen 2 NOPs porque el salto se resuelve en EX.
+
+--- 
+
+El problema central al escalar a 100.000 elementos es el stack overflow: declarar arreglos grandes como variable local en main() desborda la pila. La solución es asignación dinámica con malloc o declaración global.
+Aquí está el código escalado con histograma visual en consola:Verificó ejecución exitosa y validó resultados del programa escaladoVerificó ejecución exitosa y validó resultados del programa escaladoCompiló y corrió perfectamente — retornó 0 sin ningún segfault. Los conteos son visibles en la salida:
